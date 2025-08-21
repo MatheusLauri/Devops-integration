@@ -2,6 +2,8 @@
 using IntegracaoDevOps.Data;
 using IntegracaoDevOps.Data.Models;
 using IntegracaoDevOps.Data.DTOs;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace IntegracaoDevOps.Api.Controllers;
 
@@ -21,51 +23,55 @@ public class WebhookController : ControllerBase
     [HttpPost("userstory-updated")]
     public async Task<IActionResult> ReceiveUserStoryUpdate([FromBody] WebhookPayload payload)
     {
-        if (payload?.Resource == null || payload.EventType == null)
+        if (payload?.EventType != "workitem.updated" || !payload.Resource?.Fields?.State.HasValue == true)
         {
-            return BadRequest("Payload inválido.");
+            return Ok("Evento ignorado (não é uma atualização com mudança de estado).");
         }
 
         try
         {
-            string? actionToSave = null;
-            int workItemId = 0;
+            string? newState = null;
+            var stateElement = payload.Resource.Fields.State.Value;
 
-            if (payload.EventType == "workitem.created")
+            if (stateElement.ValueKind == JsonValueKind.Object && stateElement.TryGetProperty("newValue", out var newValueElement))
             {
-                actionToSave = "created";
-                workItemId = payload.Resource.Id;
+                newState = newValueElement.GetString();
             }
-            else if (payload.EventType == "workitem.updated")
+
+            if (newState?.Equals("In Progress", StringComparison.OrdinalIgnoreCase) == true)
             {
-                actionToSave = payload.Resource.Fields?.State?.NewValue;
-                if (payload.Resource.Revision != null)
+                if (payload.Resource.Revision?.Fields == null)
                 {
-                    workItemId = payload.Resource.Revision.Id;
+                    return BadRequest("Payload de atualização incompleto.");
                 }
-            }
 
-            if (workItemId > 0 && !string.IsNullOrEmpty(actionToSave))
-            {
-                var newEntry = new UpgradeDevops
+                var workItemId = payload.Resource.Revision.Id;
+                var workItemIdStr = workItemId.ToString();
+
+                var alreadyExists = await _context.UpgradeDevops.AnyAsync(item => item.DsUs == workItemIdStr);
+
+                if (!alreadyExists)
                 {
-                    DsUs = workItemId.ToString(), // ID da US
-                    DsEvento = actionToSave        // Ação do evento
-                };
+                    var fields = payload.Resource.Revision.Fields;
 
-                _context.UpgradeDevops.Add(newEntry);
-                await _context.SaveChangesAsync();
+                    var newEntry = new UpgradeDevops
+                    {
+                        DsUs = workItemIdStr,
+                        DsEvento = newState,
+                        Title = fields.Title,
+                        Description = fields.Description
+                    };
 
-                _logger.LogInformation("Item #{Id}: Ação '{Action}' salva com sucesso.", workItemId, actionToSave);
-            }
-            else
-            {
-                _logger.LogWarning("Dados insuficientes para salvar o evento '{EventType}'.", payload.EventType);
+                    _context.UpgradeDevops.Add(newEntry);
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("REGRA CUMPRIDA: Item #{WorkItemId} ('{Title}') movido para 'In Progress' e salvo no banco.", workItemId, newEntry.Title);
+                }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao processar e salvar o webhook.");
+            _logger.LogError(ex, "Erro ao processar o webhook.");
             return StatusCode(500, "Internal Server Error");
         }
 

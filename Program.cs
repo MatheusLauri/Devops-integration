@@ -27,5 +27,4 @@ app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-// Linha necessária para as ferramentas do EF Core
 public partial class Program { }
