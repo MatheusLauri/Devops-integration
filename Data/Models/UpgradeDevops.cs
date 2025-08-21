@@ -15,5 +15,11 @@ public class UpgradeDevops
     public string? DsUs { get; set; }
 
     [Column("DS_EVENTO")]
-    public string? DsEvento { get; set; } 
+    public string? DsEvento { get; set; }
+
+    [Column("DS_TITULO")]
+    public string? Title { get; set; }
+
+    [Column("DS_DESCRIÇÃO")]
+    public string? Description { get; set; }
 }

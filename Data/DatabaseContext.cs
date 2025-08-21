@@ -1,7 +1,7 @@
-﻿namespace IntegracaoDevOps.Data;
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using IntegracaoDevOps.Data.Models;
+
+namespace IntegracaoDevOps.Data;
 
 public class DatabaseContext : DbContext
 {
