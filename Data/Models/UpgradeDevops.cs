@@ -1,25 +1,34 @@
-﻿namespace IntegracaoDevOps.Data.Models;
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-[Table("TS_UPGDEVOPS")]
+namespace IntegracaoDevOps.Data.Models;
+
+[Table("ts_upgdevops")]
 public class UpgradeDevops
 {
-    [Key]
-    [Column("PK_ID")]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
-
-    [Column("DS_US")]
-    public string? DsUs { get; set; }
-
-    [Column("DS_EVENTO")]
-    public string? DsEvento { get; set; }
-
-    [Column("DS_TITULO")]
-    public string? Title { get; set; }
-
-    [Column("DS_DESCRIÇÃO")]
-    public string? Description { get; set; }
+    [Key] 
+    public int PkId { get; set; }
+    public int? FkItemTrabalhoAzure { get; set; }
+    public string? DsTitulo { get; set; }
+    public string? DsTipo { get; set; }
+    public string? DsDescricao { get; set; }
+    public string? DsEstado { get; set; }
+    public string? DsMotivo { get; set; }
+    public string? DsTags { get; set; }
+    public string? DsSolicitanteNome { get; set; }
+    public string? DsSolicitanteEmail { get; set; }
+  //  public string? FkSolicitanteIdAzure { get; set; }
+    public string? DsProjetoNome { get; set; }
+    public string? DsCaminhoArea { get; set; }
+    public string? DsCaminhoIteracao { get; set; }
+    public string? DsResponsavelNome { get; set; }
+    public string? DsResponsavelEmail { get; set; }
+    public int? NrPrioridade { get; set; }
+    public string? DsUrlUi { get; set; }
+    public string? DsUrlApi { get; set; }
+    public byte? TgInativo { get; set; }
+    public int? FkOwner { get; set; }
+    public DateTime? DhInclusao { get; set; }
+    public DateTime? DhAlteracao { get; set; }
 }
+
