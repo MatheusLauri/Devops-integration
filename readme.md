@@ -1,27 +1,28 @@
 # API de Integração para Azure DevOps 🚀
 
-Um serviço .NET 8 construído para receber, processar e registrar eventos de webhooks do Azure DevOps, focado em capturar o momento exato em que um item de trabalho entra na fase de "In Progress" pela primeira vez.
+Um serviço .NET 8 construído para receber, processar e registrar eventos de webhooks do Azure DevOps, focado em capturar os dados completos no momento exato em que uma User Story é criada.
 
 ---
 
 ## 📜 Descrição
 
-Este projeto resolve um problema comum no acompanhamento de projetos: saber quando o trabalho em uma tarefa, bug ou user story realmente começou. Em vez de registrar cada pequena alteração, esta API atua como um "porteiro" inteligente que:
+Este projeto resolve um problema comum no acompanhamento de projetos: a necessidade de ter um registro detalhado e centralizado de novos itens de trabalho. Em vez de registrar cada pequena alteração, esta API atua como um "coletor" inteligente que:
 
-- Ouve os eventos de atualização de itens de trabalho do Azure DevOps.
-- Filtra e reage apenas quando um item é movido para o estado "In Progress".
+- Ouve os eventos de criação de itens de trabalho (`workitem.created`) do Azure DevOps.
+- Filtra e reage apenas quando o item criado é do tipo **User Story**.
 - Verifica se este é o primeiro registro daquele item, evitando duplicatas.
-- Salva informações ricas sobre o item (ID, Título, Descrição e o Evento) em um banco de dados SQL Server para futuras análises ou integrações.
+- Salva uma gama rica de informações (ID, Título, Descrição, Solicitante, Responsável, Projeto, etc.) em um banco de dados SQL Server para futuras análises ou integrações.
 
 ---
 
 ## ✨ Funcionalidades Principais
 
-- **Gatilho Inteligente:** A API só age em eventos relevantes (`workitem.updated` para o estado "In Progress").
-- **Prevenção de Duplicidade:** Garante que cada item de trabalho seja registrado apenas uma vez, na primeira vez que entra em progresso.
-- **Extração de Dados Ricos:** Captura não apenas o ID, mas também o Título e a Descrição completos do item de trabalho.
+- **Gatilho Específico:** A API só age no evento `workitem.created` e apenas para o tipo User Story.
+- **Prevenção de Duplicidade:** Garante que cada User Story seja registrada apenas uma vez.
+- **Extração de Dados Ricos:** Captura informações detalhadas, incluindo Título, Descrição, Solicitante (Nome e Email), Responsável (Nome e Email), Projeto, Área e Iteração.
+- **Tratamento de Dados Flexível:** Lida de forma robusta com as inconsistências do Azure DevOps no formato dos dados de usuário (aceita tanto texto simples quanto objetos complexos).
 - **Configuração Segura:** Utiliza um arquivo `.env` para gerenciar a string de conexão do banco de dados, mantendo-a fora do controle de versão.
-- **Estrutura Moderna:** Construído com a arquitetura Minimal API do .NET 8 e Entity Framework Core para acesso a dados.
+- **Estrutura Sólida:** Construído com uma arquitetura Controller/Service em .NET 8 e usando Entity Framework Core para acesso a dados.
 
 ---
 
@@ -30,6 +31,7 @@ Este projeto resolve um problema comum no acompanhamento de projetos: saber quan
 - ASP.NET Core 8
 - Entity Framework Core 8
 - SQL Server
+- DotNetEnv (para carregar o arquivo .env)
 - Ngrok (para desenvolvimento local)
 - Azure DevOps (como fonte dos webhooks)
 
@@ -55,33 +57,49 @@ cd IntegracaoDevOps
 
 ### 3. Configure o Banco de Dados
 
-A aplicação precisa da tabela `TS_UPGDEVOPS` para funcionar. Execute o script SQL abaixo no seu banco de dados:
+A aplicação precisa da tabela `ts_upgdevops` para funcionar. Execute o script SQL abaixo no seu banco de dados:
 
 ```sql
-CREATE TABLE [dbo].[TS_UPGDEVOPS](
-    [PK_ID] [int] IDENTITY(1,1) NOT NULL,
-    [DS_US] [nvarchar](max) NULL,
-    [DS_EVENTO] [nvarchar](max) NULL,
-    [DS_TITULO] [nvarchar](max) NULL,
-    [DS_DESCRIÇÃO] [nvarchar](max) NULL,
- CONSTRAINT [PK_TS_UPGDEVOPS] PRIMARY KEY CLUSTERED ([PK_ID] ASC)
+CREATE TABLE ts_upgdevops
+(
+    PK_ID int identity PRIMARY KEY,
+    FK_ITEM_TRABALHO_AZURE int,
+    DS_TITULO nvarchar(255),
+    DS_TIPO varchar(100),
+    DS_DESCRICAO ntext,
+    DS_ESTADO varchar(100),
+    DS_MOTIVO varchar(255),
+    DS_TAGS varchar(500),
+    DS_SOLICITANTE_NOME nvarchar(255),
+    DS_SOLICITANTE_EMAIL varchar(255),
+    FK_SOLICITANTE_ID_AZURE varchar(100),
+    DS_PROJETO_NOME varchar(255),
+    DS_CAMINHO_AREA varchar(500),
+    DS_CAMINHO_ITERACAO varchar(500),
+    DS_RESPONSAVEL_NOME nvarchar(255),
+    DS_RESPONSAVEL_EMAIL varchar(255),
+    NR_PRIORIDADE int,
+    DS_URL_UI varchar(1024),
+    DS_URL_API varchar(1024),
+    TG_INATIVO tinyint,
+    FK_OWNER int,
+    DH_INCLUSAO datetime2,
+    DH_ALTERACAO datetime
 );
 ```
 
 ### 4. Configure as Variáveis de Ambiente
 
-Na raiz do projeto, crie um arquivo chamado `.env` e adicione sua string de conexão:
+Na raiz do projeto, crie um arquivo chamado `.env` e adicione sua string de conexão. O nome `ConnectionStrings__DefaultConnection` é importante para que o .NET a reconheça.
 
 ```ini
 ConnectionStrings__DefaultConnection="Server=SEU_SERVIDOR;Database=SEU_BANCO;User Id=SEU_USUARIO;Password=SUA_SENHA;TrustServerCertificate=True"
 ```
 
-### 5. Execute as Migrations do EF Core
-
-Este passo garante que o modelo de código está sincronizado com o banco (mesmo que já tenhamos criado a tabela manualmente).
+### 5. Instale as Dependências
 
 ```bash
-dotnet ef database update
+dotnet restore
 ```
 
 ### 6. Execute a Aplicação
@@ -106,10 +124,11 @@ Copie o endereço `https://...` gerado pelo Ngrok.
 No Azure DevOps, vá para **Project Settings > Service Hooks** e crie uma nova inscrição ("+").
 
 - **Serviço:** Web Hooks
-- **Gatilho (Trigger):** Work item updated
-- **Filtros:** Se desejar, filtre por Área, Tipo de Item, etc.
-- **URL:** Cole o endereço do Ngrok seguido do endpoint:  
-  `https://SEU_ENDERECO.ngrok-free.app/api/webhook/userstory-updated`
+- **Gatilho (Trigger):** Work item created
+- **Filtros:**  
+  Work Item Type = User Story
+- **URL:** Cole o endereço do Ngrok seguido do endpoint correto:  
+  `https://SEU_ENDERECO.ngrok-free.app/api/webhook/userstory-created`
 
 Clique em **Test** para verificar e em **Finish** para salvar.
 
@@ -120,7 +139,7 @@ Clique em **Test** para verificar e em **Finish** para salvar.
 O fluxo lógico da aplicação é o seguinte:
 
 ```
-Azure DevOps (Item movido para "In Progress")
+Azure DevOps (Criação de uma nova User Story)
     ↓
 Webhook
     ↓
@@ -128,23 +147,25 @@ Ngrok
     ↓
 API .NET
     ↓
-[Filtro 1: O estado é "In Progress"?]
+[Filtro 1: O evento é "workitem.created"?]
     ↓
-[Filtro 2: O ID já existe no banco?]
+[Filtro 2: O tipo é "User Story"?]
+    ↓
+[Filtro 3: O ID já existe no banco?]
     ↓
 INSERT no SQL Server
 ```
- 
+
 ---
 
 ## 🎛️ Detalhes do Endpoint
 
 - **Método:** POST
-- **URL:** `/api/webhook/userstory-updated`
-- **Corpo (Body):** Espera o payload JSON padrão do Azure DevOps para o evento `workitem.updated`.
+- **URL:** `/api/webhook/userstory-created`
+- **Corpo (Body):** Espera o payload JSON padrão do Azure DevOps para o evento `workitem.created`.
 
 **Respostas:**
-- `200 OK`: A requisição foi recebida com sucesso (mesmo que nenhuma ação tenha sido tomada).
+- `200 OK`: A requisição foi recebida com sucesso e processada (ou ignorada conforme as regras).
 - `400 Bad Request`: O JSON recebido é inválido ou incompleto.
 - `500 Internal Server Error`: Ocorreu um erro inesperado no servidor (ex: falha de conexão com o banco).
 
@@ -152,8 +173,7 @@ INSERT no SQL Server
 
 ## 🔮 Próximos Passos e Melhorias
 
-- [ ] Implementar uma camada de Serviço (Service Layer) para separar a lógica de negócio do Controller.
-- [ ] Adicionar autenticação ao endpoint para maior segurança.
+- [ ] Adicionar autenticação ao endpoint para maior segurança (ex: usando uma API Key).
 - [ ] Criar testes unitários e de integração.
-- [ ] Expandir a lógica para lidar com outros estados (ex: "Done", "In QA").
-- [ ] Configurar uma pipeline de CI/CD para fazer o deploy automático para um ambiente na nuvem (como o Azure App Service).
+- [ ] Expandir a lógica para lidar com a atualização (`workitem.updated`) de User Stories.
+- [ ] Configurar uma pipeline de CI/CD para fazer o deploy automático para um ambiente na nuvem 
