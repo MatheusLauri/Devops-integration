@@ -27,4 +27,17 @@ public class WebhookController : ControllerBase
 
         return Ok();
     }
+
+    [HttpPost("userstory-updated")]
+    public async Task<IActionResult> UserStoryUpdated([FromBody] JsonElement payload)
+    {
+        if (payload.ValueKind == JsonValueKind.Undefined || payload.ValueKind == JsonValueKind.Null)
+        {
+            return BadRequest("Payload não pode ser nulo.");
+        }
+
+        await _webhookService.ProcessWebhookUpdatedAsync(payload);
+        
+        return Ok();
+    }
 }

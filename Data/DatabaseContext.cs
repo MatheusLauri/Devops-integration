@@ -30,7 +30,6 @@ public class DatabaseContext : DbContext
             entity.Property(e => e.DsTags).HasColumnName("DS_TAGS").HasMaxLength(500).IsUnicode(false);
             entity.Property(e => e.DsSolicitanteNome).HasColumnName("DS_SOLICITANTE_NOME").HasColumnType("nvarchar(255)");
             entity.Property(e => e.DsSolicitanteEmail).HasColumnName("DS_SOLICITANTE_EMAIL").HasMaxLength(255).IsUnicode(false);
-           // entity.Property(e => e.FkSolicitanteIdAzure).HasColumnName("FK_SOLICITANTE_ID_AZURE").HasMaxLength(100).IsUnicode(false);
             entity.Property(e => e.DsProjetoNome).HasColumnName("DS_PROJETO_NOME").HasMaxLength(255).IsUnicode(false);
             entity.Property(e => e.DsCaminhoArea).HasColumnName("DS_CAMINHO_AREA").HasMaxLength(500).IsUnicode(false);
             entity.Property(e => e.DsCaminhoIteracao).HasColumnName("DS_CAMINHO_ITERACAO").HasMaxLength(500).IsUnicode(false);
@@ -43,6 +42,8 @@ public class DatabaseContext : DbContext
             entity.Property(e => e.FkOwner).HasColumnName("FK_OWNER");
             entity.Property(e => e.DhInclusao).HasColumnName("DH_INCLUSAO");
             entity.Property(e => e.DhAlteracao).HasColumnName("DH_ALTERACAO");
+            entity.Property(e => e.DhProrrogacao).HasColumnName("DH_PRORROGACAO");
+            entity.Property(e => e.DsCaminhoIteracaoNew).HasColumnName("DS_CAMINHO_ITERACAO_NEW").HasMaxLength(500).IsUnicode(false);
         });
     }
 }

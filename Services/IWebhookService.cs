@@ -5,4 +5,5 @@ namespace IntegracaoDevOps.Services;
 public interface IWebhookService
 {
     Task ProcessWebhookPayloadAsync(JsonElement payload);
+    Task ProcessWebhookUpdatedAsync(JsonElement payload);
 }

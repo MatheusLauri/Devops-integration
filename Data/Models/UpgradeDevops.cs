@@ -6,7 +6,7 @@ namespace IntegracaoDevOps.Data.Models;
 [Table("ts_upgdevops")]
 public class UpgradeDevops
 {
-    [Key] 
+    [Key]
     public int PkId { get; set; }
     public int? FkItemTrabalhoAzure { get; set; }
     public string? DsTitulo { get; set; }
@@ -17,7 +17,6 @@ public class UpgradeDevops
     public string? DsTags { get; set; }
     public string? DsSolicitanteNome { get; set; }
     public string? DsSolicitanteEmail { get; set; }
-  //  public string? FkSolicitanteIdAzure { get; set; }
     public string? DsProjetoNome { get; set; }
     public string? DsCaminhoArea { get; set; }
     public string? DsCaminhoIteracao { get; set; }
@@ -30,5 +29,10 @@ public class UpgradeDevops
     public int? FkOwner { get; set; }
     public DateTime? DhInclusao { get; set; }
     public DateTime? DhAlteracao { get; set; }
+
+    //novo
+    public DateTime? DhProrrogacao { get; set; }
+    public string? DsCaminhoIteracaoNew { get; set; }
+
 }
 

@@ -17,6 +17,48 @@ public class WebhookService : IWebhookService
         _logger = logger;
     }
 
+    public async Task ProcessWebhookUpdatedAsync(JsonElement payload)
+    {
+        try
+        {
+            var resource = payload.GetProperty("resource");
+            var revision = resource.GetProperty("revision");
+            var fields = revision.GetProperty("fields");
+
+            var eventType = payload.GetProperty("eventType").GetString();
+            var workItemType = fields.GetProperty("System.WorkItemType").GetString();
+
+            if (eventType != "workitem.updated" || workItemType != "User Story")
+            {
+                _logger.LogInformation("Webhook de atualização recebido, mas ignorado. Evento: {EventType}, Tipo: {WorkItemType}", eventType, workItemType);
+                return;
+            }
+
+            var azureWorkItemId = revision.GetProperty("id").GetInt32();
+
+            var existingWorkItem = await _context.UpgradeDevopsItems
+                .FirstOrDefaultAsync(item => item.FkItemTrabalhoAzure == azureWorkItemId);
+
+            if (existingWorkItem == null)
+            {
+                _logger.LogWarning("Recebido update para User Story com ID {AzureId}, mas ela não existe no banco. Update ignorado.", azureWorkItemId);
+                return;
+            }
+
+            existingWorkItem.DsCaminhoIteracaoNew = fields.TryGetProperty("System.IterationPath", out var iter) ? iter.GetString() : null;
+            existingWorkItem.DhProrrogacao = DateTime.UtcNow;
+            existingWorkItem.DhAlteracao = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("User Story {AzureId} atualizada com sucesso. Nova data de prorrogação: {Data}", azureWorkItemId, existingWorkItem.DhProrrogacao);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao processar o payload de atualização. Payload recebido: {Payload}", payload.ToString());
+            throw;
+        }
+    }
     public async Task ProcessWebhookPayloadAsync(JsonElement payload)
     {
         try
@@ -59,7 +101,7 @@ public class WebhookService : IWebhookService
 
                 DsSolicitanteNome = solicitante?.Name,
                 DsSolicitanteEmail = solicitante?.Email,
-               // FkSolicitanteIdAzure = solicitante?.Id,
+                // FkSolicitanteIdAzure = solicitante?.Id,
 
                 DsResponsavelNome = responsavel?.Name,
                 DsResponsavelEmail = responsavel?.Email,
@@ -118,8 +160,9 @@ public class WebhookService : IWebhookService
             var id = userProperty.TryGetProperty("id", out var idProp) ? idProp.GetString() : null;
             return (name, email, id);
         }
-
         return null;
     }
+
+
 }
 

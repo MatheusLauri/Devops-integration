@@ -66,6 +66,7 @@ public class Fields
 
     [JsonPropertyName("System.CreatedDate")]
     public DateTime CreatedDate { get; set; }
+
 }
 
 public class UserInfo
