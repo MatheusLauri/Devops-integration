@@ -46,6 +46,14 @@ public class WebhookService : IWebhookService
             }
 
             existingWorkItem.DsCaminhoIteracaoNew = fields.TryGetProperty("System.IterationPath", out var iter) ? iter.GetString() : null;
+
+
+            if (existingWorkItem.DsCaminhoIteracao == existingWorkItem.DsCaminhoIteracaoNew)
+            {
+                _logger.LogWarning("Task não foi prolongada.", azureWorkItemId);
+                return;
+            }
+
             existingWorkItem.DhProrrogacao = DateTime.UtcNow;
             existingWorkItem.DhAlteracao = DateTime.UtcNow;
 
