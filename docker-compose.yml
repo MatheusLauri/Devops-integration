@@ -1,0 +1,39 @@
+version: "3.3"
+
+services:
+  api:
+    restart: always
+    build:
+      context: .
+    image: "${SERVICE}-${ENV}"
+    logging:
+      options:
+        max-size: "5m"
+        max-file: "4"
+    deploy:
+      replicas: ${CONTAINERS_REPLICAS}
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      resources:
+        limits:
+          cpus: ${CONTAINER_CPUS:-1}
+          memory: ${CONTAINER_MEN:-150M}
+    networks:
+      - traefik
+    environment:
+      - "PORT=${PORT}"
+      - "ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.rule=Host(`${TRAEFIK_URL}`)"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.entrypoints=${TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.service=${TRAEFIK_ROUTER}"
+      - "traefik.http.services.${TRAEFIK_ROUTER}.loadbalancer.server.port=${PORT}"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.tls=true"
+      - "traefik.http.routers.${TRAEFIK_ROUTER}.tls.certresolver=${TRAEFIK_RESOLVER}"
+
+networks:
+  traefik:
+    external: true
