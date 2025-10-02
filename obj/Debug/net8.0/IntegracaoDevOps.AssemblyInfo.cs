@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IntegracaoDevOps")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+892237d72766cd9c4c0205fba9ad82384fb78f8a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f62767e6d7a3a7ef320ebc56d938cb7069892687")]
 [assembly: System.Reflection.AssemblyProductAttribute("IntegracaoDevOps")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IntegracaoDevOps")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

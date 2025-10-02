@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.RegularExpressions;
 
 namespace IntegracaoDevOps.Data.Models;
 
@@ -29,10 +30,9 @@ public class UpgradeDevops
     public int? FkOwner { get; set; }
     public DateTime? DhInclusao { get; set; }
     public DateTime? DhAlteracao { get; set; }
-
-    //novo
     public DateTime? DhProrrogacao { get; set; }
     public string? DsCaminhoIteracaoNew { get; set; }
+    public int? TgProrrogar { get; set; }
 
 }
 

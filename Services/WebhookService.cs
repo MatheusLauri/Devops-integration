@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using IntegracaoDevOps.Data;
 using IntegracaoDevOps.Data.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace IntegracaoDevOps.Services;
 
@@ -47,9 +48,16 @@ public class WebhookService : IWebhookService
 
             existingWorkItem.DsCaminhoIteracaoNew = fields.TryGetProperty("System.IterationPath", out var iter) ? iter.GetString() : null;
 
-
             if (existingWorkItem.DsCaminhoIteracao == existingWorkItem.DsCaminhoIteracaoNew)
             {
+                _logger.LogWarning("Task não foi prolongada.", azureWorkItemId);
+                return;
+            }
+
+            if (existingWorkItem.TgProrrogar == 1)
+            {
+                existingWorkItem.TgProrrogar = 2; // Marca como apartir disso foi prorrogada
+                await _context.SaveChangesAsync();
                 _logger.LogWarning("Task não foi prolongada.", azureWorkItemId);
                 return;
             }
@@ -106,22 +114,41 @@ public class WebhookService : IWebhookService
                 DsEstado = fields.TryGetProperty("System.State", out var state) ? state.GetString() : null,
                 DsMotivo = fields.TryGetProperty("System.Reason", out var reason) ? reason.GetString() : null,
                 DsTags = fields.TryGetProperty("System.Tags", out var tags) ? tags.GetString() : null,
-
                 DsSolicitanteNome = solicitante?.Name,
                 DsSolicitanteEmail = solicitante?.Email,
                 // FkSolicitanteIdAzure = solicitante?.Id,
-
                 DsResponsavelNome = responsavel?.Name,
                 DsResponsavelEmail = responsavel?.Email,
-
                 DsProjetoNome = fields.TryGetProperty("System.TeamProject", out var proj) ? proj.GetString() : null,
                 DsCaminhoArea = fields.TryGetProperty("System.AreaPath", out var area) ? area.GetString() : null,
                 DsCaminhoIteracao = fields.TryGetProperty("System.IterationPath", out var iter) ? iter.GetString() : null,
                 NrPrioridade = fields.TryGetProperty("Microsoft.VSTS.Common.Priority", out var prio) && prio.ValueKind == JsonValueKind.Number ? prio.GetInt32() : null,
                 DsUrlUi = resource.TryGetProperty("_links", out var links) && links.TryGetProperty("html", out var html) ? html.GetProperty("href").GetString() : null,
                 DsUrlApi = resource.TryGetProperty("_links", out links) && links.TryGetProperty("self", out var self) ? self.GetProperty("href").GetString() : null,
-                DhInclusao = fields.TryGetProperty("System.CreatedDate", out var date) ? date.GetDateTime() : null
+                DhInclusao = fields.TryGetProperty("System.CreatedDate", out var date) ? date.GetDateTime() : null,
+                TgInativo = 0,
+                TgProrrogar = 1
             };
+
+            if (!string.IsNullOrEmpty(newWorkItem.DsCaminhoIteracao))
+            {
+                const string prefixo = "Equipe F6\\";
+                int indicePrefixo = newWorkItem.DsCaminhoIteracao.IndexOf(prefixo, StringComparison.OrdinalIgnoreCase);
+
+                if (indicePrefixo != -1)
+                {
+                    // Extrai a parte da string que vem depois do prefixo
+                    string parteRelevante = newWorkItem.DsCaminhoIteracao.Substring(indicePrefixo + prefixo.Length);
+
+                    // Verifica se essa parte relevante contém algum dígito
+                    if (parteRelevante.Any(char.IsDigit))
+                    {
+                        _logger.LogInformation("Parte relevante da iteração '{ParteRelevante}' contém números. TgProrrogar será 2.", parteRelevante);
+                        newWorkItem.TgProrrogar = 2;
+                    }
+                }
+            }
+            // --- FIM DA LÓGICA ATUALIZADA ---
 
             var jsonItemToSave = JsonSerializer.Serialize(newWorkItem, new JsonSerializerOptions { WriteIndented = true });
             _logger.LogInformation("Objeto a ser salvo no banco: {JsonItem}", jsonItemToSave);
@@ -170,7 +197,5 @@ public class WebhookService : IWebhookService
         }
         return null;
     }
-
-
 }
 
