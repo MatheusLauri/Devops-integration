@@ -3,6 +3,7 @@ version: "3.3"
 services:
   api:
     restart: always
+    pull_policy: build
     build:
       context: .
     image: "${SERVICE}-${ENV}"
