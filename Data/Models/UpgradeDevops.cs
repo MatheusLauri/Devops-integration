@@ -6,7 +6,7 @@ namespace IntegracaoDevOps.Data.Models;
 
 [Table("ts_upgdevops")]
 public class UpgradeDevops
-{
+{ 
     [Key]
     public int PkId { get; set; }
     public int? FkItemTrabalhoAzure { get; set; }

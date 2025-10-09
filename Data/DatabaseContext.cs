@@ -21,7 +21,7 @@ public class DatabaseContext : DbContext
 
             entity.Property(e => e.PkId).HasColumnName("PK_ID");
             entity.Property(e => e.FkItemTrabalhoAzure).HasColumnName("FK_ITEM_TRABALHO_AZURE");
-
+ 
             entity.Property(e => e.DsTitulo).HasColumnName("DS_TITULO").HasColumnType("nvarchar(255)");
             entity.Property(e => e.DsTipo).HasColumnName("DS_TIPO").HasMaxLength(100).IsUnicode(false);
             entity.Property(e => e.DsDescricao).HasColumnName("DS_DESCRICAO").HasColumnType("ntext");

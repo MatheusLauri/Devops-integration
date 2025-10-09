@@ -179,7 +179,7 @@ public class WebhookService : IWebhookService
             {
                 return null;
             }
-
+ 
             var match = Regex.Match(userString, @"^(.*?) <(.*?)>$");
             if (match.Success)
             {
