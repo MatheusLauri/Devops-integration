@@ -54,11 +54,19 @@ public class WebhookService : IWebhookService
                 return;
             }
 
+            if (existingWorkItem.TgProrrogar == 0)
+            {
+                existingWorkItem.TgProrrogar = 1;
+                await _context.SaveChangesAsync();
+                _logger.LogWarning("Task não foi prolongada.", azureWorkItemId);
+                return;
+            }
+
             if (existingWorkItem.TgProrrogar == 1)
             {
                 existingWorkItem.TgProrrogar = 2;
                 await _context.SaveChangesAsync();
-                _logger.LogWarning("Task não foi prolongada.", azureWorkItemId);
+                _logger.LogWarning("Task foi prolongada.", azureWorkItemId);
                 return;
             }
 
