@@ -56,7 +56,7 @@ public class WebhookService : IWebhookService
 
             if (existingWorkItem.TgProrrogar == 1)
             {
-                existingWorkItem.TgProrrogar = 2; // Marca como apartir disso foi prorrogada
+                existingWorkItem.TgProrrogar = 2;
                 await _context.SaveChangesAsync();
                 _logger.LogWarning("Task não foi prolongada.", azureWorkItemId);
                 return;
@@ -116,7 +116,6 @@ public class WebhookService : IWebhookService
                 DsTags = fields.TryGetProperty("System.Tags", out var tags) ? tags.GetString() : null,
                 DsSolicitanteNome = solicitante?.Name,
                 DsSolicitanteEmail = solicitante?.Email,
-                // FkSolicitanteIdAzure = solicitante?.Id,
                 DsResponsavelNome = responsavel?.Name,
                 DsResponsavelEmail = responsavel?.Email,
                 DsProjetoNome = fields.TryGetProperty("System.TeamProject", out var proj) ? proj.GetString() : null,
@@ -127,7 +126,7 @@ public class WebhookService : IWebhookService
                 DsUrlApi = resource.TryGetProperty("_links", out links) && links.TryGetProperty("self", out var self) ? self.GetProperty("href").GetString() : null,
                 DhInclusao = fields.TryGetProperty("System.CreatedDate", out var date) ? date.GetDateTime() : null,
                 TgInativo = 0,
-                TgProrrogar = 1
+                TgProrrogar = 0
             };
 
             if (!string.IsNullOrEmpty(newWorkItem.DsCaminhoIteracao))
@@ -137,18 +136,15 @@ public class WebhookService : IWebhookService
 
                 if (indicePrefixo != -1)
                 {
-                    // Extrai a parte da string que vem depois do prefixo
                     string parteRelevante = newWorkItem.DsCaminhoIteracao.Substring(indicePrefixo + prefixo.Length);
 
-                    // Verifica se essa parte relevante contém algum dígito
                     if (parteRelevante.Any(char.IsDigit))
                     {
                         _logger.LogInformation("Parte relevante da iteração '{ParteRelevante}' contém números. TgProrrogar será 2.", parteRelevante);
-                        newWorkItem.TgProrrogar = 2;
+                        newWorkItem.TgProrrogar = 1;
                     }
                 }
             }
-            // --- FIM DA LÓGICA ATUALIZADA ---
 
             var jsonItemToSave = JsonSerializer.Serialize(newWorkItem, new JsonSerializerOptions { WriteIndented = true });
             _logger.LogInformation("Objeto a ser salvo no banco: {JsonItem}", jsonItemToSave);
