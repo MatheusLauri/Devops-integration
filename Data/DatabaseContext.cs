@@ -44,6 +44,7 @@ public class DatabaseContext : DbContext
             entity.Property(e => e.DhInclusao).HasColumnName("DH_INCLUSAO");
             entity.Property(e => e.DhAlteracao).HasColumnName("DH_ALTERACAO");
             entity.Property(e => e.DhProrrogacao).HasColumnName("DH_PRORROGACAO");
+            entity.Property(e => e.DhSprint).HasColumnName("DT_SPRINT");
             entity.Property(e => e.DsCaminhoIteracaoNew).HasColumnName("DS_CAMINHO_ITERACAO_NEW").HasMaxLength(500).IsUnicode(false);
         });
     }

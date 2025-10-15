@@ -28,6 +28,7 @@ public class WebhookService : IWebhookService
 
             var eventType = payload.GetProperty("eventType").GetString();
             var workItemType = fields.GetProperty("System.WorkItemType").GetString();
+            var DsCaminhoIteracaoNew = fields.TryGetProperty("System.IterationPath", out var iter) ? iter.GetString() : null;
 
             if (eventType != "workitem.updated" || workItemType != "User Story")
             {
@@ -46,7 +47,7 @@ public class WebhookService : IWebhookService
                 return;
             }
 
-            existingWorkItem.DsCaminhoIteracaoNew = fields.TryGetProperty("System.IterationPath", out var iter) ? iter.GetString() : null;
+            existingWorkItem.DsCaminhoIteracaoNew = DsCaminhoIteracaoNew;
 
             if (existingWorkItem.DsCaminhoIteracao == existingWorkItem.DsCaminhoIteracaoNew)
             {
@@ -54,28 +55,39 @@ public class WebhookService : IWebhookService
                 return;
             }
 
+            var solicitante = GetUserDetails(fields, "Custom.Requester") ?? GetUserDetails(fields, "System.CreatedBy");
+            var responsavel = GetUserDetails(fields, "System.AssignedTo");
+
+            // Task nao prorrogada ainda só saiu de solicitações para outra sprint
             if (existingWorkItem.TgProrrogar == 0)
             {
                 existingWorkItem.TgProrrogar = 1;
-                await _context.SaveChangesAsync();
+                existingWorkItem.DsSolicitanteNome = solicitante?.Name;
+                existingWorkItem.DsSolicitanteEmail = solicitante?.Email;
+                existingWorkItem.DsResponsavelNome = responsavel?.Name;
+                existingWorkItem.DsResponsavelEmail = responsavel?.Email;
+                existingWorkItem.DhAlteracao = DateTime.UtcNow;
+                existingWorkItem.DsCaminhoArea = DsCaminhoIteracaoNew;
+                existingWorkItem.DhSprint = DateTime.UtcNow;
+                existingWorkItem.DsTitulo = fields.TryGetProperty("System.Title", out var title) ? title.GetString() : null;
+                existingWorkItem.DsDescricao = fields.TryGetProperty("System.Description", out var desc) ? desc.GetString() : null;
+
                 _logger.LogWarning("Task não foi prolongada.", azureWorkItemId);
-                return;
             }
 
+            // task prorrogada
             if (existingWorkItem.TgProrrogar == 1)
             {
                 existingWorkItem.TgProrrogar = 2;
-                await _context.SaveChangesAsync();
-                _logger.LogWarning("Task foi prolongada.", azureWorkItemId);
-                return;
+                existingWorkItem.DhProrrogacao = DateTime.UtcNow;
+
+                _logger.LogInformation("User Story {AzureId} atualizada com sucesso. Nova data de prorrogação: {Data}", azureWorkItemId, existingWorkItem.DhProrrogacao);
             }
 
-            existingWorkItem.DhProrrogacao = DateTime.UtcNow;
             existingWorkItem.DhAlteracao = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("User Story {AzureId} atualizada com sucesso. Nova data de prorrogação: {Data}", azureWorkItemId, existingWorkItem.DhProrrogacao);
         }
         catch (Exception ex)
         {
@@ -150,6 +162,9 @@ public class WebhookService : IWebhookService
                     {
                         _logger.LogInformation("Parte relevante da iteração '{ParteRelevante}' contém números. TgProrrogar será 2.", parteRelevante);
                         newWorkItem.TgProrrogar = 1;
+                        newWorkItem.DhSprint = DateTime.UtcNow;
+                        _logger.LogInformation("passou aq.", parteRelevante);
+
                     }
                 }
             }

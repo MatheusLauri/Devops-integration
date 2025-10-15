@@ -31,6 +31,7 @@ public class UpgradeDevops
     public DateTime? DhInclusao { get; set; }
     public DateTime? DhAlteracao { get; set; }
     public DateTime? DhProrrogacao { get; set; }
+    public DateTime? DhSprint { get; set; }
     public string? DsCaminhoIteracaoNew { get; set; }
     public int? TgProrrogar { get; set; }
 
