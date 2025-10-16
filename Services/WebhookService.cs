@@ -41,21 +41,27 @@ public class WebhookService : IWebhookService
             {
                 var newState = stateChange.GetProperty("newValue").GetString();
 
-                if (newState == "Backlog")
+                switch (newState)
                 {
-                    existingWorkItem.TgStatus = 0;
-                }
-                else if (newState == "In progress")
-                {
-                    existingWorkItem.TgStatus = 1;
-                }
-                else if (newState == "Done")
-                {
-                    existingWorkItem.TgStatus = 2;
-                }
-                else if (newState == "Removed")
-                {
-                    existingWorkItem.TgStatus = 3;
+                    case "Backlog":
+                        existingWorkItem.TgStatus = 1;
+                        break;
+
+                    case "In progress":
+                        existingWorkItem.TgStatus = 2;
+                        break;
+
+                    case "Done":
+                        existingWorkItem.TgStatus = 3;
+                        break;
+                        
+                    case "Removed":
+                        existingWorkItem.TgStatus = 4;
+                        break;
+
+                    default:
+                        existingWorkItem.TgStatus = 0;
+                        break;
                 }
                 // O estado "Planned" não altera o TgStatus
 
