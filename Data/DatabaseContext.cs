@@ -40,6 +40,7 @@ public class DatabaseContext : DbContext
             entity.Property(e => e.DsUrlApi).HasColumnName("DS_URL_API").HasMaxLength(1024).IsUnicode(false);
             entity.Property(e => e.TgInativo).HasColumnName("TG_INATIVO");
             entity.Property(e => e.TgProrrogar).HasColumnName("TG_PRORROGAR");
+            entity.Property(e => e.TgStatus).HasColumnName("TG_STATUS");
             entity.Property(e => e.FkOwner).HasColumnName("FK_OWNER");
             entity.Property(e => e.DhInclusao).HasColumnName("DH_INCLUSAO");
             entity.Property(e => e.DhAlteracao).HasColumnName("DH_ALTERACAO");

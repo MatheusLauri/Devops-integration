@@ -34,6 +34,7 @@ public class UpgradeDevops
     public DateTime? DhSprint { get; set; }
     public string? DsCaminhoIteracaoNew { get; set; }
     public int? TgProrrogar { get; set; }
+    public byte? TgStatus { get; set; }
 
 }
 

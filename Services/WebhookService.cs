@@ -18,6 +18,62 @@ public class WebhookService : IWebhookService
         _logger = logger;
     }
 
+    public async Task ProcessWebhookStateUpdatedAsync(JsonElement payload)
+    {
+        try
+        {
+            var resource = payload.GetProperty("resource");
+            var changedFields = resource.GetProperty("fields");
+            var revision = resource.GetProperty("revision");
+
+            var azureWorkItemId = revision.GetProperty("id").GetInt32();
+
+            var existingWorkItem = await _context.UpgradeDevopsItems
+                .FirstOrDefaultAsync(item => item.FkItemTrabalhoAzure == azureWorkItemId);
+
+            if (existingWorkItem == null)
+            {
+                _logger.LogWarning("Recebido update de estado para User Story com ID {AzureId}, mas ela não existe no banco. Update ignorado.", azureWorkItemId);
+                return;
+            }
+
+            if (changedFields.TryGetProperty("System.State", out var stateChange))
+            {
+                var newState = stateChange.GetProperty("newValue").GetString();
+
+                if (newState == "Backlog")
+                {
+                    existingWorkItem.TgStatus = 0;
+                }
+                else if (newState == "In progress")
+                {
+                    existingWorkItem.TgStatus = 1;
+                }
+                else if (newState == "Done")
+                {
+                    existingWorkItem.TgStatus = 2;
+                }
+                else if (newState == "Removed")
+                {
+                    existingWorkItem.TgStatus = 3;
+                }
+                // O estado "Planned" não altera o TgStatus
+
+                existingWorkItem.DhAlteracao = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("User Story {AzureId} atualizada com sucesso. Novo TgStatus: {TgStatus}", azureWorkItemId, existingWorkItem.TgStatus);
+            }
+            else
+            {
+                _logger.LogInformation("Recebido webhook de estado, mas o campo 'System.State' não foi alterado.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao processar o payload de atualização de estado. Payload: {Payload}", payload.ToString());
+            throw;
+        }
+    }
     public async Task ProcessWebhookUpdatedAsync(JsonElement payload)
     {
         try

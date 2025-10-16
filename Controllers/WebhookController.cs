@@ -14,7 +14,7 @@ public class WebhookController : ControllerBase
     {
         _webhookService = webhookService;
     }
- 
+
     [HttpPost("userstory-created")]
     public async Task<IActionResult> HandleUserStoryCreated([FromBody] JsonElement payload)
     {
@@ -37,7 +37,22 @@ public class WebhookController : ControllerBase
         }
 
         await _webhookService.ProcessWebhookUpdatedAsync(payload);
-        
+
+        return Ok();
+    }
+
+
+    // --- NOVO ENDPOINT ---
+    [HttpPost("userstory-state-updated")]
+    public async Task<IActionResult> UserStoryStateUpdated([FromBody] JsonElement payload)
+    {
+        if (payload.ValueKind == JsonValueKind.Undefined || payload.ValueKind == JsonValueKind.Null)
+        {
+            return BadRequest("Payload não pode ser nulo.");
+        }
+
+        await _webhookService.ProcessWebhookStateUpdatedAsync(payload);
+
         return Ok();
     }
 }
