@@ -13,11 +13,14 @@ public class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+       // base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<UpgradeDevops>(entity =>
         {
-            entity.ToTable("ts_upgdevops");
+            // entity.ToTable("ts_upgdevops");
+            entity.ToTable("ts_upgdevops", t => t.HasTrigger("TR_TS_UPGDEVOPS_POPULAR_USUARIO"));
+            entity.HasKey(e => e.PkId);
+
 
             entity.Property(e => e.PkId).HasColumnName("PK_ID");
             entity.Property(e => e.FkItemTrabalhoAzure).HasColumnName("FK_ITEM_TRABALHO_AZURE");
